@@ -2,6 +2,7 @@ package server
 
 import (
 	routeCategories "github.com/Billy278/pos_app_monolic/modules/router/v1/categories"
+	routeOrder "github.com/Billy278/pos_app_monolic/modules/router/v1/orders"
 	routePayment "github.com/Billy278/pos_app_monolic/modules/router/v1/payment"
 	routeProduct "github.com/Billy278/pos_app_monolic/modules/router/v1/products"
 	routeUser "github.com/Billy278/pos_app_monolic/modules/router/v1/users"
@@ -17,6 +18,8 @@ func NewServer() {
 	routeCategories.NewCategoriesRouter(v1, handler.CategoriesCtrl)
 	routeProduct.NewProductRouter(v1, handler.ProductsCtrl)
 	routeUser.NewUserRouter(v1, handler.UserCtrl)
+	routeOrder.NewPaymentRouter(v1, handler.OrderCtrl)
+
 	g.Run(":9090")
 
 }

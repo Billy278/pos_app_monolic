@@ -104,3 +104,41 @@ func (repo *ProductsImpl) RepoDelete(ctx context.Context, id uint64) (err error)
 	}
 	return
 }
+
+func (repo *ProductsImpl) RepoUpdateTx(ctx context.Context, db *sql.Tx, productIn modelsProducts.Products) (resProduct modelsProducts.Products, err error) {
+	fmt.Println("RepoUpdateProductTX")
+	sqlUpdate := "UPDATE products set name=$1,stock=$2,price=$3,image=$4,category_id=$5,updated_at=$6 WHERE id=$7"
+
+	_, err = db.ExecContext(ctx, sqlUpdate, productIn.Name, productIn.Stock, productIn.Price, productIn.Image, productIn.Category_id, productIn.Updated_At, productIn.Id)
+	if err != nil {
+		return
+	}
+	resProduct.Id = productIn.Id
+	resProduct.Name = productIn.Name
+	resProduct.Stock = productIn.Stock
+	resProduct.Price = productIn.Price
+	resProduct.Image = productIn.Image
+	resProduct.Category_id = productIn.Category_id
+	resProduct.Created_At = productIn.Created_At
+
+	return
+}
+func (repo *ProductsImpl) RepoFindByidTx(ctx context.Context, db *sql.Tx, id uint64) (resProduct modelsProducts.Products, err error) {
+	fmt.Println("RepoFindByidProductTx")
+	sqlFind := "SELECT id,name,stock,price,image,category_id,created_at,updated_at FROM products WHERE id=$1 FOR UPDATE"
+	row, err := db.QueryContext(ctx, sqlFind, id)
+	if err != nil {
+		return
+	}
+	defer row.Close()
+	if row.Next() {
+		err = row.Scan(&resProduct.Id, &resProduct.Name, &resProduct.Stock, &resProduct.Price, &resProduct.Image, &resProduct.Category_id, &resProduct.Created_At, &resProduct.Updated_At)
+		if err != nil {
+			return
+		}
+	} else {
+		err = errors.New("NOT FOUND")
+	}
+
+	return
+}

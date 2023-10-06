@@ -13,4 +13,5 @@ type UserRepo interface {
 	RepoCreate(ctx context.Context, userIn modelsUser.User) (resUser modelsUser.User, err error)
 	RepoUpdate(ctx context.Context, userIn modelsUser.User) (resUser modelsUser.User, err error)
 	RepoDelete(ctx context.Context, id uint64) (err error)
+	RepoFindUsernameToLogin(ctx context.Context, username string) (resUser modelsUser.User, err error)
 }

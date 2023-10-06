@@ -6,6 +6,7 @@ import (
 
 	models "github.com/Billy278/pos_app_monolic/modules/models/users"
 	services "github.com/Billy278/pos_app_monolic/modules/services/users"
+	"github.com/Billy278/pos_app_monolic/pkg/helper"
 	"github.com/Billy278/pos_app_monolic/pkg/responses"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -76,7 +77,7 @@ func (ctrl *UserCtrlimpl) FindByid(ctx *gin.Context) {
 		Data:    resUser,
 	})
 }
-func (ctrl *UserCtrlimpl) Created(ctx *gin.Context) {
+func (ctrl *UserCtrlimpl) Register(ctx *gin.Context) {
 	//validasi req
 	reqUser := models.User{}
 	err := ctx.ShouldBindJSON(&reqUser)
@@ -99,8 +100,9 @@ func (ctrl *UserCtrlimpl) Created(ctx *gin.Context) {
 		})
 		return
 	}
+
 	//cek apakah username sudah ada yg menggunakan
-	err = ctrl.UserSrv.RepoFindUser(ctx, reqUser.Username)
+	err = ctrl.UserSrv.SrvFindUser(ctx, reqUser.Username)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
 			Code:    http.StatusBadRequest,
@@ -109,6 +111,18 @@ func (ctrl *UserCtrlimpl) Created(ctx *gin.Context) {
 		})
 		return
 	}
+
+	//cek type role Only accept ADMIN/KASIR
+	err = helper.CekReqRole(reqUser.Role)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
+			Code:    http.StatusBadRequest,
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
 	resUser, err := ctrl.UserSrv.SrvCreate(ctx, reqUser)
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, responses.Response{
@@ -149,6 +163,17 @@ func (ctrl *UserCtrlimpl) Updated(ctx *gin.Context) {
 		return
 	}
 
+	//cek type role Only accept ADMIN/KASIR
+	err = helper.CekReqRole(reqUser.Role)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
+			Code:    http.StatusBadRequest,
+			Success: false,
+			Message: err.Error(),
+		})
+		return
+	}
+
 	//validasi param
 	id, err := ctrl.ConvertId(ctx)
 	if err != nil {
@@ -165,6 +190,7 @@ func (ctrl *UserCtrlimpl) Updated(ctx *gin.Context) {
 		Id:    reqUser.Id,
 		Name:  reqUser.Name,
 		Email: reqUser.Email,
+		Role:  reqUser.Role,
 	})
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, responses.Response{
@@ -206,6 +232,48 @@ func (ctrl *UserCtrlimpl) Deleted(ctx *gin.Context) {
 		Success: true,
 		Message: responses.Success,
 	})
+}
+func (ctrl *UserCtrlimpl) Login(ctx *gin.Context) {
+	//validasi req
+	reqLogin := models.UserLogin{}
+	err := ctx.ShouldBindJSON(&reqLogin)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
+			Code:    http.StatusBadRequest,
+			Success: false,
+			Message: responses.InvalidBody,
+		})
+		return
+	}
+
+	//valisdasi dengan validator
+	err = ctrl.Validate.Struct(reqLogin)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
+			Code:    http.StatusBadRequest,
+			Success: false,
+			Message: responses.InvalidBody,
+		})
+		return
+	}
+
+	resUser, err := ctrl.UserSrv.SrvFindUsernameToLogin(ctx, reqLogin.Username, reqLogin.Password)
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, responses.Response{
+			Code:    http.StatusBadRequest,
+			Success: false,
+			Message: "Username Atau Password salah",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, responses.Response{
+		Code:    http.StatusOK,
+		Success: true,
+		Message: responses.Success,
+		Data:    resUser,
+	})
+
 }
 func (ctrl *UserCtrlimpl) GetQuery(ctx *gin.Context) (limit, offset uint64, err error) {
 	limitQry, ok := ctx.GetQuery("limit")

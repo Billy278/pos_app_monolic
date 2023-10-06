@@ -10,3 +10,12 @@ func CekReqType(data string) (err error) {
 
 	return
 }
+
+func CekReqRole(data string) (err error) {
+	if data == "ADMIN" || data == "KASIR" {
+		return
+	}
+	err = errors.New("Bad Role request Only accept ADMIN/KASIR")
+
+	return
+}
